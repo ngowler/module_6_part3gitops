@@ -19,7 +19,7 @@ spec:
         - name: ghcr-creds
       containers:
         - name: studentportfolio
-          image: ghcr.io/ngowler/module_6_part3-studentportfolio:3fa018cd5e0cc9ff96707074d03203d6b3669b9f
+          image: ghcr.io/ngowler/module_6_part3-studentportfolio:2a22044bb642c078b4d68a523cfa2ad56a39fbbd
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
