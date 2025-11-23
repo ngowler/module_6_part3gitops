@@ -19,7 +19,7 @@ spec:
         - name: ghcr-creds
       containers:
         - name: backend
-          image: ghcr.io/ngowler/module_6_part3-backend:88312d5f8562766a18484757c0fc758259ec6aff
+          image: ghcr.io/ngowler/module_6_part3-backend:30463286372599dcb26c08624fea0d9433137837
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
