@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: nginx-conf
+  namespace: default
 data:
   nginx.conf: |
     worker_processes auto;
@@ -30,8 +31,9 @@ data:
       server {
         listen 80;
 
-        # Backend APIs
+        # Backend APIs (strip /api prefix)
         location ~ ^/api/(login|dashboard|deposit|withdraw|logout|register) {
+          rewrite ^/api/(.*)$ /$1 break;
           proxy_pass http://backend;
           proxy_http_version 1.1;
           proxy_set_header Host $host;
@@ -40,8 +42,9 @@ data:
           proxy_set_header X-Forwarded-Proto $scheme;
         }
 
-        # Transactions API
+        # Transactions API (strip /api prefix)
         location /api/transactions {
+          rewrite ^/api/transactions/?(.*)$ /$1 break;
           proxy_pass http://transactions;
           proxy_http_version 1.1;
           proxy_set_header Host $host;
