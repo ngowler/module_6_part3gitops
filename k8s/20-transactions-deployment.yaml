@@ -19,7 +19,7 @@ spec:
         - name: ghcr-creds
       containers:
         - name: transactions
-          image: ghcr.io/ngowler/module_6_part3-transactions:08e2dfeea895a73a1df55e06f861a31ded66c12f
+          image: ghcr.io/ngowler/module_6_part3-transactions:c5672247957a7a7f30a19aac239fe4833e78b57d
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
