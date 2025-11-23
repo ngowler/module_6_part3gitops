@@ -7,95 +7,67 @@ data:
     worker_processes auto;
 
     events {
-        worker_connections 1024;
+      worker_connections 1024;
     }
 
     http {
-        include       mime.types;
-        default_type  application/octet-stream;
-        sendfile      on;
+      include       mime.types;
+      default_type  application/octet-stream;
+      sendfile      on;
 
-        map $http_origin $cors_origin {
-            default "";
-            "~^http://127\.0\.0\.1:\d+$" $http_origin;
+      upstream backend {
+        server backend:5000;
+      }
+
+      upstream transactions {
+        server transactions:3000;
+      }
+
+      upstream studentportfolio {
+        server studentportfolio:80;
+      }
+
+      server {
+        listen 80;
+
+        # Backend APIs
+        location /api/backend/ {
+          proxy_pass http://backend/;
+          proxy_http_version 1.1;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
         }
 
-        upstream studentportfolio {
-            server studentportfolio:80;
+        # Transaction API direct (if called by UI)
+        location = /api/transactions {
+          proxy_pass http://backend/api/transactions;
+          proxy_http_version 1.1;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
         }
 
-        upstream backend {
-            server backend:5000;
+        # Transaction service (raw)
+        location /api/transactions-service/ {
+          proxy_pass http://transactions/;
+          proxy_http_version 1.1;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
         }
 
-        upstream transactions {
-            server transactions:6000;
+        # Everything else goes to the student portfolio static site
+        location / {
+          proxy_pass http://studentportfolio;
+          proxy_http_version 1.1;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
         }
-
-        server {
-            listen 80;
-            server_name localhost;
-
-            # Static/portfolio
-            location / {
-                proxy_pass http://studentportfolio;
-                proxy_set_header Host $http_host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
-                proxy_redirect off;
-            }
-
-            # Backend API and auth routes
-            location ~ ^/(api|deposit|withdraw|login|register|dashboard|logout) {
-                proxy_pass http://backend;
-                proxy_set_header Host $http_host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
-                proxy_redirect off;
-
-                # CORS: send on all responses, vary by Origin
-                add_header Access-Control-Allow-Origin $cors_origin always;
-                add_header Access-Control-Allow-Credentials "true" always;
-                add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
-                add_header Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization" always;
-                add_header Vary "Origin" always;
-
-                # Preflight
-                if ($request_method = OPTIONS) {
-                    add_header Access-Control-Allow-Origin $cors_origin always;
-                    add_header Access-Control-Allow-Credentials "true" always;
-                    add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
-                    add_header Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization" always;
-                    add_header Vary "Origin" always;
-                    return 204;
-                }
-            }
-
-            # Transactions app
-            location /transactions/ {
-                proxy_pass http://transactions/;
-                proxy_set_header Host $http_host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
-                proxy_redirect off;
-
-                add_header Access-Control-Allow-Origin $cors_origin always;
-                add_header Access-Control-Allow-Credentials "true" always;
-                add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
-                add_header Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization" always;
-                add_header Vary "Origin" always;
-
-                if ($request_method = OPTIONS) {
-                    add_header Access-Control-Allow-Origin $cors_origin always;
-                    add_header Access-Control-Allow-Credentials "true" always;
-                    add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
-                    add_header Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization" always;
-                    add_header Vary "Origin" always;
-                    return 204;
-                }
-            }
-        }
+      }
     }
