@@ -31,7 +31,6 @@ data:
       server {
         listen 80;
 
-        # Backend APIs (keep /api prefix)
         location ~ ^/api/(login|dashboard|deposit|withdraw|logout|register) {
           proxy_pass http://backend;
           proxy_http_version 1.1;
@@ -41,7 +40,6 @@ data:
           proxy_set_header X-Forwarded-Proto $scheme;
         }
 
-        # Transactions API (map to by-user route)
         location ~ ^/api/transactions/(.*)$ {
           rewrite ^/api/transactions/(.*)$ /api/transactions/by-user/$1 break;
           proxy_pass http://transactions;
